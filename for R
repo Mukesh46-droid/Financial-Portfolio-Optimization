@@ -1,0 +1,31 @@
+library(quadprog)
+
+# Sample data: expected returns and covariance matrix of asset returns
+returns <- c(0.12, 0.18, 0.15) # Expected returns for three assets
+cov_matrix <- matrix(c(0.1, 0.02, 0.03,
+                        0.02, 0.08, 0.01,
+                        0.03, 0.01, 0.09), nrow=3)
+
+# Number of assets
+n_assets <- length(returns)
+
+# Create the Dmat and dvec for quadratic programming
+Dmat <- cov_matrix * (252) # Annualizing the covariance matrix (assuming daily returns)
+dvec <- rep(0, n_assets) # No linear term
+
+# Constraints: weights must sum to 1
+Amat <- cbind(rep(1, n_assets), diag(n_assets))
+bvec <- c(1, rep(0, n_assets))
+
+# Solve the quadratic programming problem
+result <- solve.QP(Dmat, dvec, Amat, bvec)$solution
+
+# Results
+optimal_weights <- result / sum(result) # Normalize weights to sum to one
+cat("Optimal Weights:", optimal_weights, "\n")
+cat("Expected Portfolio Return:", sum(optimal_weights * returns), "\n")
+cat("Portfolio Risk:", sqrt(t(optimal_weights) %*% cov_matrix %*% optimal_weights), "\n")
+
+# Plotting the results (optional)
+barplot(optimal_weights, names.arg=c("Asset 1", "Asset 2", "Asset 3"),
+        ylab="Weight", main="Optimal Portfolio Weights")
